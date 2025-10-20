@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Championnat CYYCCIT</title>
+
+  <!-- Vue 3 CDN -->
+  <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+
+  <!-- Vuetify 3 CDN -->
+  <link href="https://cdn.jsdelivr.net/npm/vuetify@3.5.4/dist/vuetify.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/vuetify@3.5.4/dist/vuetify.min.js"></script>
+
+  <script src="https://cdn.jsdelivr.net/npm/@mdi/font@7.4.47/scripts/verify.min.js"></script>
+  <link href="https://cdn.jsdelivr.net/npm/@mdi/font@7.4.47/css/materialdesignicons.min.css" rel="stylesheet">
+
+  <!-- Roboto Font -->
+  <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet">
+
+
+  <!-- Manifest -->
+  <link href="/manifest.json" rel="manifest">
+
+  <style>
+    body {
+      font-family: 'Roboto', sans-serif;
+    }
+
+    .bg-declasse {
+      background-color: #d7d7d7;
+      color: #656565;
+    }
+
+    .bg-manche_exclue {
+      background-color: #ffd2d2;
+      color: #8c0000;
+    }
+
+    .podium {
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      color: white;
+      font-weight: bold;
+    }
+
+    .podium_rank {
+      color: #000;
+      font-size: 1.5em;
+    }
+
+    .podium_rank_mobile {
+      color: #000;
+      font-size: 1.2em;
+      font-weight: bold;
+    }
+
+    .podium_percent {
+      color: #000;
+      font-size: 1em;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="app">
+    <v-app>
+      <v-main>
+        <v-container class="py-8">
+          <v-tabs v-if="isMobile" v-model="tab" grow color="white" bg-color="blue-lighten-4" stacked>
+            <v-tab :class="tab === 0 ? 'bg-blue-darken-3' : ''">
+              <v-icon icon="mdi-podium"></v-icon>
+            </v-tab>
+            <v-tab :class="tab === 1 ? 'bg-blue-darken-3' : ''">
+              <v-icon icon="mdi-anchor"></v-icon>
+            </v-tab>
+            <v-tab :class="tab === 2 ? 'bg-blue-darken-3' : ''">
+              <v-icon icon="mdi-sail-boat"></v-icon>
+            </v-tab>
+            <v-tab :class="tab === 3 ? 'bg-blue-darken-3' : ''">
+              <v-icon icon="mdi-book-open-variant-outline"></v-icon>
+            </v-tab>
+          </v-tabs>
+          <v-tabs v-else v-model="tab" grow color="white" bg-color="blue-lighten-4" stacked>
+            <v-tab :class="tab === 0 ? 'bg-blue-darken-3' : ''">
+              <v-icon icon="mdi-podium"></v-icon>
+              Podiums
+            </v-tab>
+            <v-tab :class="tab === 1 ? 'bg-blue-darken-3' : ''">
+              <v-icon icon="mdi-anchor"></v-icon>
+              Classement Club
+            </v-tab>
+            <v-tab :class="tab === 2 ? 'bg-blue-darken-3' : ''">
+              <v-icon icon="mdi-sail-boat"></v-icon>
+              Classement Individuel
+            </v-tab>
+            <v-tab :class="tab === 3 ? 'bg-blue-darken-3' : ''">
+              <v-icon icon="mdi-book-open-variant-outline"></v-icon>
+              Règlement
+            </v-tab>
+          </v-tabs>
+
+          <v-window v-model="tab" class="mt-4" :touch="false">
+            <v-window-item v-if="isMobile" :value="0">
+              <span class="text-h4 d-flex justify-center align-center">Clubs</span>
+              <v-container>
+                <v-row no-gutters v-for="(club,i) in results_club" :key="i">
+                  <v-col :cols="podium_width_club[i]">
+                    <v-sheet elevation="9" class="ma-1 pa-1 d-flex flex-column justify-start align-center"
+                      :color="'#'+podium_colors_club_mobile[i]"><span
+                        class="podium_rank_mobile">{{computeRankingPodiumTitle(club.Classement)}}</span>
+                      <span class="podium_percent">{{club.Total}}</span></v-sheet>
+                  </v-col>
+                  <v-col>
+                    <span class="d-flex justify-left align-center text-h7 font-weight-bold h-100">{{club.Club}}</span>
+                  </v-col>
+                </v-row>
+              </v-container>
+              <v-container v-for="(groupe) in podium_bateaux_mobile" :key="groupe.groupe">
+                <v-divider :thickness="5" class="ma-8"></v-divider>
+                <span class="text-h4 d-flex justify-center align-center">{{groupe.groupe}}</span>
+                <v-container>
+                  <v-row no-gutters v-for="(bateau,i) in groupe.bateaux" :key="i">
+                    <v-col :cols="podium_width_bateau[i]">
+                      <v-sheet elevation="9" class="ma-1 pa-1 d-flex flex-column justify-start align-center"
+                        :color="'#'+podium_colors_bateau_mobile[i]"><span
+                          class="podium_rank_mobile">{{computeRankingPodiumTitle(bateau.Classement)}}</span>
+                        <span class="podium_percent">{{bateau!=null?bateau.Total_points+' pts':''}}</span></v-sheet>
+                    </v-col>
+                    <v-col>
+                      <span
+                        class="d-flex justify-left align-center text-h7 font-weight-bold h-100">{{bateau!=null?bateau.Bateau:''}}</span>
+                    </v-col>
+                  </v-row>
+                </v-container>
+              </v-container>
+            </v-window-item>
+            <v-window-item v-else :value="0">
+              <span class="text-h4 d-flex justify-center align-center">Clubs</span>
+              <v-container>
+                <v-row no-gutters align="end">
+                  <v-col v-for="(club,i) in podium_clubs" :key="i">
+                    <v-img cover :src="getLogo(club.Club,club.Classement)"></v-img>
+                    <span class="d-flex justify-center align-center text-h5 font-weight-bold" style="width: 100%;">{{
+                      club.Club }}</span>
+                    <v-sheet elevation="9" class="ma-1 pa-2 d-flex flex-column justify-start align-center"
+                      :height="(podium_heights_club[i]||100)+'px'" :color="'#'+podium_colors_club[i]">
+                      <span class="podium_rank">{{computeRankingPodiumTitle(club.Classement)}}</span>
+                      <span class="podium_percent">{{club.Total}}</span>
+                    </v-sheet>
+                  </v-col>
+                </v-row>
+              </v-container>
+              <v-container v-for="(groupe) in podium_bateaux" :key="groupe.groupe">
+                <v-divider :thickness="5" class="ma-8"></v-divider>
+                <span class="text-h4 d-flex justify-center align-center">{{groupe.groupe}}</span>
+                <v-container>
+                  <v-row no-gutters align="end">
+                    <v-col v-for="(bateau,i) in groupe.bateaux" :key="i">
+                      <span class="d-flex justify-center align-center text-h5 font-weight-bold"
+                        style="width: 100%;">{{bateau!=null?bateau.Bateau:''}}</span>
+                      <v-sheet elevation="9" class="ma-1 pa-2 d-flex flex-column justify-start align-center"
+                        :height="(podium_heights_bateau[i]||100)+'px'" :color="'#'+podium_colors_bateau[i]">
+                        <span class="podium_rank">{{computeRankingPodiumTitle(podium_ranking_bateau[i])}}</span>
+                        <span class="podium_percent">{{bateau!=null?bateau.Total_points+' points':''}}</span>
+                      </v-sheet>
+                    </v-col>
+                  </v-row>
+                </v-container>
+              </v-container>
+            </v-window-item>
+            <v-window-item :value="1">
+              <v-data-table :items="results_club" :headers="headers_club">
+                <template #headers="{ columns }">
+                  <tr>
+                    <th v-for="column in columns" :key="column.key" class="font-weight-bold">
+                      {{ column.title }}
+                    </th>
+                  </tr>
+                </template>
+                <template v-slot:bottom>
+                </template>
+              </v-data-table>
+            </v-window-item>
+
+            <v-window-item :value="2">
+              <v-container class="py-8">
+                <v-tabs v-model="tab2" grow color="green-darken-4">
+                  <v-tab v-for="groupe in groupes">{{groupe.Value}}</v-tab>
+                </v-tabs>
+                <v-window v-model="tab2" class="mt-4" :touch="false">
+                  <v-window-item v-for="(groupe,index) in groupes" :value="index" :key="groupe.Value">
+                    <v-data-table :headers="headers_bateaux"
+                      :items="results_bateaux.filter(item=>item.Groupe==groupe.Value)" :item-class="getRowClass">
+                      <template #headers="{ columns }">
+                        <tr>
+                          <th v-for="column in columns" :key="column.key" class="font-weight-bold">
+                            {{ column.title }}
+                          </th>
+                        </tr>
+                      </template>
+                      <template #item="{ item }">
+                        <tr :class="getRowClass(item)">
+                          <td v-for="header in headers_bateaux" :key="header.key"
+                            :class="getCellClass(item, header.key)">
+                            {{ item[header.key] }}
+                          </td>
+                        </tr>
+                      </template>
+                      <template v-slot:bottom>
+                      </template>
+                    </v-data-table>
+                  </v-window-item>
+                </v-window>
+              </v-container>
+              <v-container>
+                <v-chip width="400" variant="elevated" class="ma-2 bg-declasse">Bateau non classé</v-chip>
+                <v-chip width="400" variant="elevated" class="ma-2 bg-manche_exclue">Manche exclue</v-chip>
+              </v-container>
+            </v-window-item>
+            <v-window-item :value="3">
+              <v-container class="py-8">
+                <v-alert :value="true" type="warning">
+                  En cours de rédaction, merci de patienter.
+                </v-alert>
+                <br /><br />
+                <v-card elevation="3">
+                  <template v-slot:title>
+                    <span class="font-weight-black">Classement Club</span>
+                  </template>
+
+
+                  <v-card-text>
+                    <v-card color="purple-lighten-4">
+                      <v-alert :value="true" type="info">
+                        Ce classement évalue la participation des bateaux de chaque club sur l’ensemble des manches.
+                        Plus un club mobilise ses bateaux, plus son score est élevé.<br />
+                        Cela valorise la régularité et l’engagement du club tout au long de la saison, même sans
+                        podiums.
+                      </v-alert>
+                    </v-card>
+                    <br />
+                    <b>Calcul du pourcentage de participation :</b><br />
+                    À chaque manche et pour chaque club, sont comptabilisés le nombre de bateaux participants, rapportés
+                    au nombre total de
+                    bateaux du club (càd qui ont concuru au moins une manche pendant tout le championnat)<br /><br />
+
+                    <v-alert :value="true" type="warning" variant='tonal'>
+                      Un bateau doit avoir participé à au moins <b>{{def_parametres[0].Valeur}} manches</b> pour être pris en compte dans le
+                      classement de son club.
+                      <br />Un bateau est considéré comme participant à une manche <b>s'il est classé
+                        <span v-for="(item, i) in def_classement.filter(item=>item.Comptabilise_participants=='TRUE')"
+                          :key="i">
+                          ou {{ item.Value }}
+                        </span></b>.
+                    </v-alert><br />
+                    <v-alert :value="true" type="warning" variant='tonal'>
+                      Ne sont comptabilisés que les bateaux faisant partie des groupes
+                      <b><span v-for="(item, i) in groupes.filter(item=>item.Comptabilise=='TRUE')" :key="i">
+                          {{ item.Value }}<span v-if="i < def_classement.length - 1">, </span>
+                        </span></b>.
+                    </v-alert>
+                    <br /><br />
+                    Cela donne un pourcentage de participation par manche et par club.
+                    Le total obtenu par le club est la moyenne de ces pourcentages de participation.
+                    <br /><br />
+                    Le club ayant le pourcentage le plus élevé est vainqueur de ce classement.
+
+                    <br /><br /><b>En cas d'égalité:</b><br />
+                    Pour départager deux clubs qui auraient le même pourcentage de participation. Sont comparés alors
+                    les classements individuels.
+                    Est considéré comme gagnant, le club qui cumule le plus de premières places. En cas d'égalité, sont
+                    comparées les deuxièmes places, etc..
+
+                    <br /><br />
+                    <b>Exemple:</b><br />
+                    <v-data-table :items="exemple1">
+                      <template v-slot:bottom>
+                      </template>
+                    </v-data-table>
+                    <br /><br />
+                    Le résultat par club est donc:<br /><br />
+                    <v-data-table :items="exemple2">
+                      <template v-slot:bottom>
+                      </template>
+                    </v-data-table>
+                    <br /><br />
+                    Pour départager Rouge et Vert, on compare les premières places (0 pour Rouge, 0 pour Vert), puis les
+                    deuxièmes places (0 pour Rouge, 1 pour Vert). C'est donc Vert devant Rouge.<br /> Bleu est dernier
+                    avec un
+                    pourcentage de participation inférieur à Rouge et Vert.
+                  </v-card-text>
+                </v-card>
+              </v-container>
+          </v-window>
+          <v-snackbar v-if="canInstall" v-model="snackbar" timeout="10000">
+            Installer l'application
+            <template v-slot:actions>
+              <v-btn color="light-green-accent-2" variant="text" @click="installApp">
+                Oui
+              </v-btn>
+              <v-btn color="pink-accent-2" variant="text" @click="snackbar = false">
+                Non
+              </v-btn>
+            </template>
+          </v-snackbar>
+        </v-container>
+      </v-main>
+    </v-app>
+  </div>
+
+  <script>
+    const { createApp, ref, onMounted, computed } = Vue;
+    const { createVuetify } = Vuetify;
+    const vuetify = createVuetify();
+
+    const app = createApp({
+      setup() {
+        const tab = ref(0);
+        const tab2 = ref(0);
+        const results_bateaux = ref([]);
+        const results_club = ref([]);
+        const groupes = ref([]);
+        const headers_bateaux = ref([]);
+        const headers_club = ref([]);
+        const podium_heights_club = [80, 100, 120, 130, 110, 90, 70];
+        const podium_width_club = [9, 7, 5, 4, 4, 4, 4];
+        const podium_colors_club = ['67b3dd', '67b3dd', 'b7b5b5', 'd0b547', 'e8976e', '67b3dd', '67b3dd'];
+        const podium_colors_club_mobile = ['d0b547', 'b7b5b5', 'e8976e', '67b3dd', '67b3dd', '67b3dd', '67b3dd'];
+        const podium_heights_bateau = [120, 130, 110];
+        const podium_width_bateau = [8, 6, 4];
+        const podium_colors_bateau = ['b7b5b5', 'd0b547', 'e8976e'];
+        const podium_colors_bateau_mobile = ['d0b547', 'b7b5b5', 'e8976e'];
+        const podium_ranking_bateau = [2, 1, 3];
+        const podium_ranking_bateau_mobile = [1, 2, 3];
+        const podium_ranking_club = [6, 4, 2, 1, 3, 5, 7];
+        const podium_clubs = ref([]);
+        const podium_bateaux = ref([]);
+        const podium_bateaux_mobile = ref([]);
+        let rankedBateaux = [];
+        const { useDisplay } = Vuetify;
+        const display = useDisplay();
+
+        const isMobile = computed(() => !display.smAndUp.value);
+
+        const canInstall = ref(false);
+        const deferredPrompt = ref(null);
+        const snackbar = ref(true);
+        const def_classement = ref([]);
+        const def_parametres = ref([]);
+
+        const exemple1 = [
+          {
+            Bateau: 'Alpha',
+            Club: 'Bleu',
+            Manche_1: '1',
+            Manche_2: 'DNC',
+            Manche_3: '2'
+          }, {
+            Bateau: 'Beta',
+            Club: 'Bleu',
+            Manche_1: '2',
+            Manche_2: '1',
+            Manche_3: '3'
+          }, {
+            Bateau: 'Gamma',
+            Club: 'Bleu',
+            Manche_1: 'DNC',
+            Manche_2: 'DNC',
+            Manche_3: '1'
+          }, {
+            Bateau: 'Delta',
+            Club: 'Rouge',
+            Manche_1: '3',
+            Manche_2: 'DNC',
+            Manche_3: '6'
+          }, {
+            Bateau: 'Epsilon',
+            Club: 'Rouge',
+            Manche_1: '4',
+            Manche_2: '4',
+            Manche_3: '5'
+          }, {
+            Bateau: 'Zeta',
+            Club: 'Vert',
+            Manche_1: '5',
+            Manche_2: '3',
+            Manche_3: 'DNC'
+          }, {
+            Bateau: 'Eta',
+            Club: 'Vert',
+            Manche_1: '6',
+            Manche_2: '2',
+            Manche_3: '4'
+          }
+        ];
+
+        const exemple2 = [
+          {
+            Club: 'Bleu',
+            Bateaux_total: '3',
+            Manche_1: '2/3 => 66%',
+            Manche_2: '1/3 => 33%',
+            Manche_3: '3/3 => 100%',
+            Total: '6/9 => 66%',
+            Classement: '3'
+          }, {
+            Club: 'Rouge',
+            Bateaux_total: '2',
+            Manche_1: '2/2 => 100%',
+            Manche_2: '1/2 => 50%',
+            Manche_3: '2/2 => 100%',
+            Total: '5/6 => 83%',
+            Classement: '2'
+          }, {
+            Club: 'Vert',
+            Bateaux_total: '2',
+            Manche_1: '2/2 => 100%',
+            Manche_2: '2/2 => 100%',
+            Manche_3: '1/2 => 50%',
+            Total: '5/6 => 83%',
+            Classement: '1'
+          }
+        ];
+
+
+        onMounted(() => {
+          window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt.value = e;
+            canInstall.value = true;
+          });
+
+          Promise.all([
+            fetch('https://sheets.googleapis.com/v4/spreadsheets/1LL27xNtglUsxVkloFlbmKoTiWVDv-dw_78JvwGBrdV0/values/Web-Clubs?key=AIzaSyCQjRhn4HdRWrzbgac9Xb-9zYIXrxjYixI').then(res => res.json()),
+            fetch('https://sheets.googleapis.com/v4/spreadsheets/1LL27xNtglUsxVkloFlbmKoTiWVDv-dw_78JvwGBrdV0/values/Manches?key=AIzaSyCQjRhn4HdRWrzbgac9Xb-9zYIXrxjYixI').then(res => res.json()),
+            fetch('https://sheets.googleapis.com/v4/spreadsheets/1LL27xNtglUsxVkloFlbmKoTiWVDv-dw_78JvwGBrdV0/values/Web-Bateaux?key=AIzaSyCQjRhn4HdRWrzbgac9Xb-9zYIXrxjYixI').then(res => res.json()),
+            fetch('https://sheets.googleapis.com/v4/spreadsheets/1LL27xNtglUsxVkloFlbmKoTiWVDv-dw_78JvwGBrdV0/values/ListeGroupes?key=AIzaSyCQjRhn4HdRWrzbgac9Xb-9zYIXrxjYixI').then(res => res.json()),
+            fetch('https://sheets.googleapis.com/v4/spreadsheets/1LL27xNtglUsxVkloFlbmKoTiWVDv-dw_78JvwGBrdV0/values/ListeClassements?key=AIzaSyCQjRhn4HdRWrzbgac9Xb-9zYIXrxjYixI').then(res => res.json()),
+            fetch('https://sheets.googleapis.com/v4/spreadsheets/1LL27xNtglUsxVkloFlbmKoTiWVDv-dw_78JvwGBrdV0/values/Parametres?key=AIzaSyCQjRhn4HdRWrzbgac9Xb-9zYIXrxjYixI').then(res => res.json())
+          ])
+            .then(([data1, data2, data3, data4, data5, data6]) => {
+              const classement_club_headers = data1.values[0];
+              const classement_club = data1.values.slice(1).map(item => Object.fromEntries(classement_club_headers.map((key, i) => [key, item[i]])));
+
+              const classement_bateaux_headers = data3.values[0];
+              const classement_bateaux = data3.values.slice(1).map(item => Object.fromEntries(classement_bateaux_headers.map((key, i) => [key, item[i]])));
+
+              const manches_headers = data2.values[0];
+              const manches = data2.values.slice(1).map(item => Object.fromEntries(manches_headers.map((key, i) => [key, item[i]])));
+              const mancheCourues = manches.filter(manche => manche.Statut == "Courue");
+
+              const groupes_headers = data4.values[0];
+              const localGroupes = data4.values.slice(1).map(item => Object.fromEntries(groupes_headers.map((key, i) => [key, item[i]])));
+              groupes.value = localGroupes;
+
+              const def_classement_headers = data5.values[0];
+              def_classement.value = data5.values.slice(-4).map(item => Object.fromEntries(def_classement_headers.map((key, i) => [key, item[i]])));
+
+              const parametres_headers = data6.values[0];
+              def_parametres.value = data6.values.slice(1).map(item => Object.fromEntries(parametres_headers.map((key, i) => [key, item[i]])));
+              console.log(def_parametres.value[0].Valeur);
+
+              headers_bateaux.value = [
+                { title: 'Classement', key: 'Classement' },
+                { title: 'Bateau', key: 'Bateau' },
+                { title: 'Skipper', key: 'Skipper' },
+                { title: 'Club', key: 'Club' }
+              ]
+
+              headers_club.value = [
+                { title: 'Classement', key: 'Classement' },
+                { title: 'Club', key: 'Club' }
+              ]
+
+              for (let i = 0; i < mancheCourues.length; i++) {
+                headers_bateaux.value.push({ title: "Manche " + mancheCourues[i].ID + "-" + mancheCourues[i].Club, key: "Manche_" + mancheCourues[i].ID });
+                headers_club.value.push({ title: "Manche " + mancheCourues[i].ID + "-" + mancheCourues[i].Club, key: "Manche_" + mancheCourues[i].ID });
+              }
+
+              headers_bateaux.value.push({ title: 'Total', key: 'Total_points' });
+
+              headers_club.value.push({ title: 'Total', key: 'Total' });
+
+
+
+              // Club ranking
+              let items_club = [];
+
+              for (const club of classement_club) {
+                let item = {
+                  "Club": club["Club"]
+                };
+
+                for (let i = 0; i < mancheCourues.length; i++) {
+                  item["Manche_" + mancheCourues[i].ID] = club["Manche_" + mancheCourues[i].ID];
+                }
+
+                item.Classement = club["Classement"];
+                item.Total = club["Total_participation"];
+
+                items_club.push(item);
+              }
+
+              items_club.sort((a, b) => Number(a.Classement) - Number(b.Classement));
+              results_club.value = items_club;
+              podium_clubs.value = rankClubsPodium(items_club);
+
+
+
+              // Bateaux ranking
+
+              classement_bateaux.sort((a, b) => {
+                if (a.Total_points != b.Total_points) {
+                  return Number(a.Total_points) - Number(b.Total_points)
+                } else {
+                  return Number(b.Ponderation) - Number(a.Ponderation)
+                }
+              }
+              );
+
+              const groupCounters = {};
+
+              rankedBateaux = classement_bateaux.map(bateau => {
+                const groupe = bateau.Groupe;
+
+                if (!groupCounters[groupe]) {
+                  groupCounters[groupe] = 1;
+                } else {
+                  groupCounters[groupe]++;
+                }
+
+                return {
+                  ...bateau,
+                  Classement: bateau.Classe == "TRUE" ? groupCounters[groupe] : ''
+                };
+              });
+
+              localGroupes.forEach(function (groupe) {
+                let filtered = rankedBateaux.filter(item => item.Groupe == groupe.Value);
+                let podiumRankedBateaux = rankBateauxPodium(filtered);
+                let podiumRankedBateauxMobile = rankBateauxPodiumMobile(filtered);
+                podium_bateaux.value.push({
+                  groupe: groupe.Value,
+                  bateaux: podiumRankedBateaux
+                })
+                podium_bateaux_mobile.value.push({
+                  groupe: groupe.Value,
+                  bateaux: podiumRankedBateauxMobile
+                })
+              })
+              results_bateaux.value = rankedBateaux;
+
+            })
+            .catch(() => {
+              console.error('Error fetching data');
+            });
+        });
+
+        function getRowClass(item) {
+          return item.Classe == "FALSE" ? 'bg-declasse' : '';
+        }
+
+        function getCellClass(item, index) {
+          if ((index == 'Manche_' + item.Manche_exclue) && (item.Classe == "TRUE")) {
+            return 'bg-manche_exclue';
+          }
+        }
+
+        function rankClubsPodium(clubs) {
+          let rankedClubs = [];
+          podium_ranking_club.forEach(function (rank) {
+            let club = clubs.find(c => c.Classement == rank);
+            rankedClubs.push(club);
+          })
+          return rankedClubs;
+        }
+
+        function rankBateauxPodium(bateaux) {
+          let rankedBateaux = [];
+          podium_ranking_bateau.forEach(function (rank) {
+            let bateau = bateaux.find(c => c.Classement == rank);
+            rankedBateaux.push(bateau);
+          })
+          return rankedBateaux;
+        }
+
+        function rankBateauxPodiumMobile(bateaux) {
+          let rankedBateaux = [];
+          podium_ranking_bateau_mobile.forEach(function (rank) {
+            let bateau = bateaux.find(c => c.Classement == rank);
+            rankedBateaux.push(bateau);
+          })
+          return rankedBateaux;
+        }
+
+        function getLogo(club, classement) {
+          let suffix;
+          switch (classement) {
+            case "1":
+              suffix = "or";
+              break;
+            case "2":
+              suffix = "argent";
+              break;
+            case "3":
+              suffix = "bronze";
+              break;
+            default:
+              suffix = "autre";
+              break;
+          }
+
+          let filePath = "logos/" + club + "_" + suffix + ".png";
+          return filePath;
+        }
+
+        function computeRankingPodiumTitle(Classement) {
+          let suffix;
+          switch (Classement) {
+            case "1":
+              suffix = "er";
+              break;
+            default:
+              suffix = "ème";
+              break;
+          }
+          return Classement + suffix;
+        }
+
+        function getBateauPodium(group, rank) {
+          let filtered = rankedBateaux.filter(item => item.Groupe == group);
+          let selectedBateau = filtered[rank - 1];
+          return selectedBateau.Classe == "TRUE" ? selectedBateau : null;
+        }
+
+        function installApp() {
+          if (deferredPrompt.value) {
+            deferredPrompt.value.prompt();
+            deferredPrompt.value.userChoice.then(() => {
+              deferredPrompt.value = null;
+              canInstall.value = false;
+            });
+          }
+        }
+
+        return { canInstall, exemple1, exemple2, def_classement, def_parametres, snackbar, installApp, tab, tab2, results_bateaux, results_club, groupes, headers_bateaux, headers_club, getRowClass, getCellClass, podium_heights_club, podium_bateaux_mobile, podium_heights_bateau, podium_colors_bateau_mobile, podium_width_bateau, podium_colors_club_mobile, podium_colors_bateau, podium_colors_club, podium_clubs, podium_bateaux, getLogo, computeRankingPodiumTitle, getBateauPodium, podium_ranking_bateau, podium_ranking_club, display, isMobile, podium_width_club };
+      }
+    });
+    app.use(vuetify);
+    app.mount('#app');
+  </script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/service-worker.js')
+        .then(function () { console.log('Service Worker registered') })
+        .catch(err => console.error('Service Worker registration failed:', err));
+    }
+  </script>
+</body>
+
+</html>
