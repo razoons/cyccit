@@ -248,16 +248,16 @@
                     bateaux du club (càd qui ont concuru au moins une manche pendant tout le championnat)<br /><br />
 
                     <v-alert :value="true" type="warning" variant='tonal'>
+                      <h3>Règles d'éligibilité</h3><br/>
                       Un bateau doit avoir participé à au moins <b>{{def_parametres[0].Valeur}} manches</b> pour être pris en compte dans le
-                      classement de son club.
+                      classement de son club (seulement si le championnat comporte au moins <b>{{def_parametres[1].Valeur}} manches</b>).
                       <br />Un bateau est considéré comme participant à une manche <b>s'il est classé
                         <span v-for="(item, i) in def_classement.filter(item=>item.Comptabilise_participants=='TRUE')"
                           :key="i">
                           ou {{ item.Value }}
                         </span></b>.
-                    </v-alert><br />
-                    <v-alert :value="true" type="warning" variant='tonal'>
-                      Ne sont comptabilisés que les bateaux faisant partie des groupes
+                        <br/><br/>
+                        Ne sont comptabilisés que les bateaux faisant partie des groupes
                       <b><span v-for="(item, i) in groupes.filter(item=>item.Comptabilise=='TRUE')" :key="i">
                           {{ item.Value }}<span v-if="i < def_classement.length - 1">, </span>
                         </span></b>.
