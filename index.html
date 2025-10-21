@@ -38,6 +38,16 @@
       color: #8c0000;
     }
 
+    .bg-comptabilise-true {
+      background-color: #b0eb9d;
+      color: #000000;
+    }
+
+    .bg-comptabilise-false {
+      background-color: #faa197;
+      color: #000000;
+    }
+
     .podium {
       display: flex;
       align-items: flex-end;
@@ -222,10 +232,6 @@
             </v-window-item>
             <v-window-item :value="3">
               <v-container class="py-8">
-                <v-alert :value="true" type="warning">
-                  En cours de rédaction, merci de patienter.
-                </v-alert>
-                <br /><br />
                 <v-card elevation="3">
                   <template v-slot:title>
                     <span class="font-weight-black">Classement Club</span>
@@ -248,16 +254,21 @@
                     bateaux du club (càd qui ont concuru au moins une manche pendant tout le championnat)<br /><br />
 
                     <v-alert :value="true" type="warning" variant='tonal'>
-                      <h3>Règles d'éligibilité</h3><br/>
-                      Un bateau doit avoir participé à au moins <b>{{def_parametres[0].Valeur}} manches</b> pour être pris en compte dans le
-                      classement de son club (seulement si le championnat comporte au moins <b>{{def_parametres[1].Valeur}} manches</b>).
+                      <h3>Règles d'éligibilité</h3><br />
+                      Un club est classé s'il possède au moins <b>{{def_parametres[2].Valeur}} bateaux</b> participant.
+                      <br /><br />
+
+                      Un bateau doit avoir participé à au moins <b>{{def_parametres[0].Valeur}} manches</b> pour être
+                      pris en compte dans le
+                      classement de son club (seulement si le championnat comporte au moins
+                      <b>{{def_parametres[1].Valeur}} manches</b>).
                       <br />Un bateau est considéré comme participant à une manche <b>s'il est classé
                         <span v-for="(item, i) in def_classement.filter(item=>item.Comptabilise_participants=='TRUE')"
                           :key="i">
                           ou {{ item.Value }}
                         </span></b>.
-                        <br/><br/>
-                        Ne sont comptabilisés que les bateaux faisant partie des groupes
+                      <br /><br />
+                      Ne sont comptabilisés que les bateaux faisant partie des groupes
                       <b><span v-for="(item, i) in groupes.filter(item=>item.Comptabilise=='TRUE')" :key="i">
                           {{ item.Value }}<span v-if="i < def_classement.length - 1">, </span>
                         </span></b>.
@@ -291,6 +302,69 @@
                     deuxièmes places (0 pour Rouge, 1 pour Vert). C'est donc Vert devant Rouge.<br /> Bleu est dernier
                     avec un
                     pourcentage de participation inférieur à Rouge et Vert.
+                  </v-card-text>
+                </v-card>
+                <br /><br />
+                <v-card elevation="3">
+                  <template v-slot:title>
+                    <span class="font-weight-black">Classement Individuel</span>
+                  </template>
+
+
+                  <v-card-text>
+                    <v-card color="purple-lighten-4">
+                      <v-alert :value="true" type="info">
+                        Ce classement représente à la fois la participation d'un bateau au championnat et ses
+                        performances.
+                        Il est basé sur le score individuel de chaque bateau, par catégorie. Plus le score est faible,
+                        plus le rang est élevé.
+                      </v-alert>
+                    </v-card>
+                    <br />
+                    <b>Calcul des points par manche</b><br />
+                    Chaque bateau cumule un nombre de points par manche (même les manches auxquelles il n'a pas
+                    participé).
+                    Le score du bateau est l'addition des points de toutes les manches, à laquelle est soustraite la
+                    manche la plus mauvaise.
+
+                    Pour chaque manche, et par catégorie, le nombre de points d'un bateau est égal à son classement sur
+                    cette manche (en compensé).<br />
+                    <v-alert :value="true" type="warning" variant='tonal'>
+                      Les bateaux hors championnats ne sont pas retirés du classement.
+                    </v-alert>
+                    <br />
+                    Si le bateau n'est pas classé, il obtient de facto un score en fonction du nombre de bateaux
+                    participants.<br />
+                    Les règles sont les suivantes:<br />
+
+                    <v-data-table
+                      :headers="[{ title: 'Statut', key: 'statut' },{ title: 'Classement', key: 'ranking' },{title: 'Comptabilisant', key: 'comptabilise'}]"
+                      :items="formattedClassement">
+                      <template #headers="{ columns }">
+                        <tr>
+                          <th v-for="col in columns" :key="col.key" class="font-weight-bold">{{ col.title }}</th>
+                        </tr>
+                      </template>
+
+                      <template #item="{ item, columns }">
+                        <tr>
+                          <td v-for="col in columns" :key="col.key" :class="getRowClassExample(item.comptabilise_bool)">{{ item[col.key] }}</td>
+                        </tr>
+                      </template>
+
+                      <template v-slot:bottom></template>
+                    </v-data-table>
+                    <br /><br />
+
+                    <b>Exemple:</b><br />
+                    <v-data-table :items="exemple3">
+                      <template v-slot:bottom>
+                      </template>
+                    </v-data-table>
+                    <br />
+
+
+
                   </v-card-text>
                 </v-card>
               </v-container>
@@ -350,6 +424,46 @@
         const snackbar = ref(true);
         const def_classement = ref([]);
         const def_parametres = ref([]);
+
+        const formattedClassement = computed(() =>
+          def_classement.value.map(item => {
+            let ranking_text;
+            switch (item.Reference) {
+              case 'Plus grand groupe':
+                ranking_text = `+${item.Penalite} par rapport au nombre de bateaux du plus grand groupe`;
+                break;
+              case 'Groupe du bateau':
+                ranking_text = `+${item.Penalite} par rapport au nombre de bateaux du groupe`;
+                break;
+              case 'Groupe du bateau':
+                ranking_text = `+${item.Penalite} par rapport au nombre de bateaux total participants`;
+                break;
+              default:
+                ranking_text = `+${item.Penalite} par rapport au nombre de bateaux total participants`;
+                break;
+            }
+
+            let comptabilise_text;
+            let comptabilise_bool;
+            if (item.Comptabilise_participants == 'TRUE') {
+              comptabilise_text = "Le bateau est considéré comme participant à la manche";
+              comptabilise_bool=true;
+            } else {
+              comptabilise_text = "Le bateau est considéré comme ne participant pas à la manche";
+              comptabilise_bool=false;
+            }
+
+
+            return {
+              statut: item.Value,
+              ranking: ranking_text,
+              comptabilise: comptabilise_text,
+              comptabilise_bool: comptabilise_bool
+            }
+
+          })
+        );
+
 
         const exemple1 = [
           {
@@ -425,6 +539,58 @@
           }
         ];
 
+        const exemple3 = [
+          {
+            Bateau: 'Alpha',
+            Club: 'Bleu',
+            Groupe: "HN1",
+            'Classement sur la manche': '1',
+            score: '1'
+          }, {
+            Bateau: 'Zeta',
+            Club: 'Hors championnat',
+            Groupe: "HN1",
+            'Classement sur la manche': '2',
+            score: 'Hors championnat'
+          }, {
+            Bateau: 'Beta',
+            Club: 'Bleu',
+            Groupe: "HN1",
+            'Classement sur la manche': '3',
+            score: '3'
+          }, {
+            Bateau: 'Delta',
+            Club: 'Rouge',
+            Groupe: "HN1",
+            'Classement sur la manche': 'DNF',
+            score: '1+4=5'
+          }, {
+            Bateau: 'Gamma',
+            Club: 'Bleu',
+            Groupe: "HN2",
+            'Classement sur la manche': '1',
+            score: '1'
+          }, {
+            Bateau: 'Epsilon',
+            Club: 'Rouge',
+            Groupe: "HN2",
+            'Classement sur la manche': 'DNC',
+            score: '5+6=11'
+          }, {
+            Bateau: 'Iota',
+            Club: 'Vert',
+            Groupe: "HN3",
+            'Classement sur la manche': '1',
+            score: '1'
+          }, {
+            Bateau: 'Eta',
+            Club: 'Vert',
+            Groupe: "HN3",
+            'Classement sur la manche': 'DNS',
+            score: '3+6=9'
+          }
+        ];
+
 
         onMounted(() => {
           window.addEventListener('beforeinstallprompt', (e) => {
@@ -458,7 +624,7 @@
 
               const def_classement_headers = data5.values[0];
               def_classement.value = data5.values.slice(-4).map(item => Object.fromEntries(def_classement_headers.map((key, i) => [key, item[i]])));
-
+              console.log(def_classement.value);
               const parametres_headers = data6.values[0];
               def_parametres.value = data6.values.slice(1).map(item => Object.fromEntries(parametres_headers.map((key, i) => [key, item[i]])));
               console.log(def_parametres.value[0].Valeur);
@@ -563,6 +729,10 @@
           return item.Classe == "FALSE" ? 'bg-declasse' : '';
         }
 
+        function getRowClassExample(bool){
+          return bool == true ? 'bg-comptabilise-true' : 'bg-comptabilise-false';
+        }
+
         function getCellClass(item, index) {
           if ((index == 'Manche_' + item.Manche_exclue) && (item.Classe == "TRUE")) {
             return 'bg-manche_exclue';
@@ -646,7 +816,7 @@
           }
         }
 
-        return { canInstall, exemple1, exemple2, def_classement, def_parametres, snackbar, installApp, tab, tab2, results_bateaux, results_club, groupes, headers_bateaux, headers_club, getRowClass, getCellClass, podium_heights_club, podium_bateaux_mobile, podium_heights_bateau, podium_colors_bateau_mobile, podium_width_bateau, podium_colors_club_mobile, podium_colors_bateau, podium_colors_club, podium_clubs, podium_bateaux, getLogo, computeRankingPodiumTitle, getBateauPodium, podium_ranking_bateau, podium_ranking_club, display, isMobile, podium_width_club };
+        return { canInstall, exemple1, formattedClassement, exemple2, exemple3, def_classement, def_parametres, snackbar, installApp, tab, tab2, results_bateaux, results_club, groupes, headers_bateaux, headers_club, getRowClass, getRowClassExample, getCellClass, podium_heights_club, podium_bateaux_mobile, podium_heights_bateau, podium_colors_bateau_mobile, podium_width_bateau, podium_colors_club_mobile, podium_colors_bateau, podium_colors_club, podium_clubs, podium_bateaux, getLogo, computeRankingPodiumTitle, getBateauPodium, podium_ranking_bateau, podium_ranking_club, display, isMobile, podium_width_club };
       }
     });
     app.use(vuetify);
