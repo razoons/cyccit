@@ -101,6 +101,11 @@
       width: 30%;
       left: 50%;
     }
+    .first_mobile {
+      top: 2%;
+      width: 30%;
+      left: 50%;
+    }
 
     .second {
       top: 40%;
@@ -108,9 +113,21 @@
       width: 22%;
     }
 
+    .second_mobile {
+      top: 30%;
+      left: 22%;
+      width: 22%;
+    }
+
     .third {
       top: 52%;
-      left: 76%;
+      left: 78%;
+      width: 18%;
+    }
+
+    .third_mobile {
+      top: 42%;
+      left: 78%;
       width: 18%;
     }
 
@@ -131,15 +148,29 @@
       top: 42%;
       left: 50%;
     }
+    .first-name_mobile {
+      top: 38%;
+      left: 50%;
+    }
 
     .second-name {
       top: 58%;
       left: 22%;
     }
 
+    .second-name_mobile {
+      top: 54%;
+      left: 22%;
+    }
+
     .third-name {
       top: 67%;
-      left: 76%;
+      left: 78%;
+    }
+
+    .third-name_mobile {
+      top: 62%;
+      left: 78%;
     }
 
     .mobile {
@@ -222,37 +253,27 @@
                   <!-- The podium image (background stand) -->
                   <img src="podium2.png" class="podium-image" />
                   <!-- Winner logos (absolutely positioned) -->
-                  <img :src="getLogo(podium_clubs[0].Club,podium_clubs[0].Classement)" class="podium-logo first" />
-                  <div class="podium-name first-name"><span
+                  <img :src="getLogo(podium_clubs[0].Club,podium_clubs[0].Classement)" :class="isMobile ? 'podium-logo first_mobile' : 'podium-logo first'"  />
+                  <div :class="isMobile ? 'podium-name first-name_mobile' : 'podium-name first-name'"><span
                       class="podium-club-name">{{podium_clubs[0].Club}}</span><br />{{podium_clubs[0].Total}}
                   </div>
-                  <img :src="getLogo(podium_clubs[1].Club,podium_clubs[1].Classement)" class="podium-logo second" />
-                  <div class="podium-name second-name"><span
+                  <img :src="getLogo(podium_clubs[1].Club,podium_clubs[1].Classement)" :class="isMobile ? 'podium-logo second_mobile' : 'podium-logo second'" />
+                  <div :class="isMobile ? 'podium-name second-name_mobile' : 'podium-name second-name'"><span
                       class="podium-club-name">{{podium_clubs[1].Club}}</span><br />{{podium_clubs[1].Total}}
                   </div>
-                  <img :src="getLogo(podium_clubs[2].Club,podium_clubs[2].Classement)" class="podium-logo third" />
-                  <div class="podium-name third-name"><span
+                  <img :src="getLogo(podium_clubs[2].Club,podium_clubs[2].Classement)" :class="isMobile ? 'podium-logo third_mobile' : 'podium-logo third'" />
+                  <div :class="isMobile ? 'podium-name third-name_mobile' : 'podium-name third-name'"><span
                       class="podium-club-name">{{podium_clubs[2].Club}}</span><br />{{podium_clubs[2].Total}}
                   </div>
                 </div>
               </v-container>
-              <!--<v-container>
-                <v-sheet v-for="club in podium_clubs.slice(3)" rounded :elevation="4" color="deep-purple-lighten-5"
-                  class="pa-2 mb-4 sheets_clubs">
-                  <v-row>
-                    <v-col cols="1"><b>{{club.Classement}}</b></v-col>
-                    <v-col cols="2">{{club.Club}}</v-col>
-                    <v-col cols="9">{{club.Total}}</v-col>
-                  </v-row>
-                </v-sheet>
-              </v-container>-->
 
               <v-sheet class="text-h4 pa-4 ma-4 d-flex justify-center align-center" :elevation="1"
                 color="blue-darken-3" :rounded="true">
                 Individuel
               </v-sheet>
-              <v-container class="d-flex flex-wrap">
-                <v-container v-for="group in podium_bateaux" style="min-width: 400px; width:auto;">
+              <v-container class="d-flex flex-wrap justify-center align-center">
+                <v-container v-for="group in podium_bateaux" style="min-width: 300px; width:auto;" class="justify-center align-center">
                   <v-sheet class="text-h6 pa-4 ma-4 d-flex justify-center align-center bg-blue-lighten-3"
                     :rounded="true">
                     {{group.groupe}}
@@ -261,9 +282,8 @@
                     :class="['pa-4', 'mb-4', 'sheets_clubs', `bateau_rank_${bateau.Classement || 'null' }`]">
                     <v-row>
                       <v-col cols="1"><b>{{bateau.Classement?? ''}}</b></v-col>
-                      <v-col cols="5">{{bateau.Bateau?? ''}}</v-col>
-                      <v-col cols="3">{{bateau.Club?? ''}}</v-col>
-                      <v-col cols="3">{{bateau.Total_points?? ''}}</v-col>
+                      <v-col cols="8">{{bateau.Bateau?? ''}} ({{bateau.Club?? ''}})</v-col>
+                      <v-col cols="2">{{bateau.Total_points?? ''}}</v-col>
                     </v-row>
                   </v-sheet>
                 </v-container>
