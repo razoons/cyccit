@@ -101,6 +101,7 @@
       width: 30%;
       left: 50%;
     }
+
     .first_mobile {
       top: 2%;
       width: 30%;
@@ -148,6 +149,7 @@
       top: 42%;
       left: 50%;
     }
+
     .first-name_mobile {
       top: 38%;
       left: 50%;
@@ -244,8 +246,8 @@
 
             <!--ONGLET PODIUM-->
             <v-window-item :value="0">
-              <v-sheet class="text-h4 pa-4 ma-4 d-flex justify-center align-center" :elevation="1"
-                color="blue-darken-3" :rounded="true">
+              <v-sheet class="text-h4 pa-4 ma-4 d-flex justify-center align-center" :elevation="1" color="blue-darken-3"
+                :rounded="true">
                 Club
               </v-sheet>
               <v-container>
@@ -253,27 +255,31 @@
                   <!-- The podium image (background stand) -->
                   <img src="podium2.png" class="podium-image" />
                   <!-- Winner logos (absolutely positioned) -->
-                  <img :src="getLogo(podium_clubs[0].Club,podium_clubs[0].Classement)" :class="isMobile ? 'podium-logo first_mobile' : 'podium-logo first'"  />
+                  <img :src="getLogo(podium_clubs[0].Club,podium_clubs[0].Classement)"
+                    :class="isMobile ? 'podium-logo first_mobile' : 'podium-logo first'" />
                   <div :class="isMobile ? 'podium-name first-name_mobile' : 'podium-name first-name'"><span
                       class="podium-club-name">{{podium_clubs[0].Club}}</span><br />{{podium_clubs[0].Total}}
                   </div>
-                  <img :src="getLogo(podium_clubs[1].Club,podium_clubs[1].Classement)" :class="isMobile ? 'podium-logo second_mobile' : 'podium-logo second'" />
+                  <img :src="getLogo(podium_clubs[1].Club,podium_clubs[1].Classement)"
+                    :class="isMobile ? 'podium-logo second_mobile' : 'podium-logo second'" />
                   <div :class="isMobile ? 'podium-name second-name_mobile' : 'podium-name second-name'"><span
                       class="podium-club-name">{{podium_clubs[1].Club}}</span><br />{{podium_clubs[1].Total}}
                   </div>
-                  <img :src="getLogo(podium_clubs[2].Club,podium_clubs[2].Classement)" :class="isMobile ? 'podium-logo third_mobile' : 'podium-logo third'" />
+                  <img :src="getLogo(podium_clubs[2].Club,podium_clubs[2].Classement)"
+                    :class="isMobile ? 'podium-logo third_mobile' : 'podium-logo third'" />
                   <div :class="isMobile ? 'podium-name third-name_mobile' : 'podium-name third-name'"><span
                       class="podium-club-name">{{podium_clubs[2].Club}}</span><br />{{podium_clubs[2].Total}}
                   </div>
                 </div>
               </v-container>
 
-              <v-sheet class="text-h4 pa-4 ma-4 d-flex justify-center align-center" :elevation="1"
-                color="blue-darken-3" :rounded="true">
+              <v-sheet class="text-h4 pa-4 ma-4 d-flex justify-center align-center" :elevation="1" color="blue-darken-3"
+                :rounded="true">
                 Individuel
               </v-sheet>
               <v-container class="d-flex flex-wrap justify-center align-center">
-                <v-container v-for="group in podium_bateaux" style="min-width: 300px; width:auto;" class="justify-center align-center">
+                <v-container v-for="group in podium_bateaux" style="min-width: 300px; width:auto;"
+                  class="justify-center align-center">
                   <v-sheet class="text-h6 pa-4 ma-4 d-flex justify-center align-center bg-blue-lighten-3"
                     :rounded="true">
                     {{group.groupe}}
@@ -282,7 +288,7 @@
                     :class="['pa-4', 'mb-4', 'sheets_clubs', `bateau_rank_${bateau.Classement || 'null' }`]">
                     <v-row>
                       <v-col cols="1"><b>{{bateau.Classement?? ''}}</b></v-col>
-                      <v-col cols="8">{{bateau.Bateau?? ''}} ({{bateau.Club?? ''}})</v-col>
+                      <v-col cols="8">{{bateau.Bateau?? ''}} {{bateau.Club?'('+bateau.Club+')':''}}</v-col>
                       <v-col cols="2">{{bateau.Total_points?? ''}}</v-col>
                     </v-row>
                   </v-sheet>
@@ -949,7 +955,7 @@
         function rankBateauxPodium(bateaux) {
           let rankedBateaux = [];
           podium_ranking_bateau.forEach(function (rank) {
-            let bateau = bateaux.find(c => c.Classement == rank)||{};
+            let bateau = bateaux.find(c => c.Classement == rank) || {};
             rankedBateaux.push(bateau);
           })
           return rankedBateaux;
